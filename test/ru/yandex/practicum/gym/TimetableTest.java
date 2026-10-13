@@ -197,6 +197,82 @@ public class TimetableTest {
                 );
     }
 
+    @Test
+    void testGetCountByCoachesEmptyTimetable() {
+        Timetable timetable = new Timetable();
+
+        Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
+
+        assertThat(countByCoaches)
+                .isEmpty();
+    }
+
+    @Test
+    void testGetCountByCoachesGroupsEqualCoaches() {
+        Timetable timetable = new Timetable();
+
+        TimeOfDay timeOfDay = new TimeOfDay(13, 0);
+        Group groupChild = new Group("Акробатика для детей", Age.CHILD, 60);
+        Group groupAdult = new Group("Акробатика для взрослых", Age.ADULT, 90);
+        Coach coachAdult = new Coach("Васильев", "Николай", "Сергеевич");
+        Coach coachChild = new Coach("Васильев", "Николай", "Сергеевич");
+        TrainingSession trainingSessionAtMonday = new TrainingSession(
+                groupChild,
+                coachChild,
+                DayOfWeek.MONDAY,
+                timeOfDay
+        );
+        TrainingSession trainingSessionAtTuesday = new TrainingSession(
+                groupAdult,
+                coachAdult,
+                DayOfWeek.TUESDAY,
+                timeOfDay
+        );
+
+        timetable.addNewTrainingSession(trainingSessionAtMonday);
+        timetable.addNewTrainingSession(trainingSessionAtTuesday);
+
+        Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
+
+        assertThat(countByCoaches)
+                .hasSize(1)
+                .containsEntry(coachAdult, 2L);
+    }
+
+    @Test
+    void testGetCountByCoachesSortsBySessionCount() {
+        Timetable timetable = new Timetable();
+
+        Group group = new Group("Акробатика для детей", Age.CHILD, 60);
+        Coach coachWithOneSession = new Coach("Васильев", "Николай", "Сергеевич");
+        Coach coachWithTwoSessions = new Coach("Смолов", "Иван", "Федорович");
+        Coach coachWithThreeSessions = new Coach("Иванов", "Петр", "Александрович");
+
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithOneSession, DayOfWeek.MONDAY, new TimeOfDay(10, 0)));
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithTwoSessions, DayOfWeek.MONDAY, new TimeOfDay(11, 0)));
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithThreeSessions, DayOfWeek.MONDAY, new TimeOfDay(10, 0)));
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithTwoSessions, DayOfWeek.TUESDAY, new TimeOfDay(11, 0)));
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithThreeSessions, DayOfWeek.WEDNESDAY, new TimeOfDay(12, 0)));
+        timetable.addNewTrainingSession(new TrainingSession(
+                group, coachWithThreeSessions, DayOfWeek.FRIDAY, new TimeOfDay(15, 0)));
+
+        Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
+
+        assertThat(countByCoaches)
+                .hasSize(3)
+                .containsEntry(coachWithOneSession, 1L)
+                .containsEntry(coachWithTwoSessions, 2L)
+                .containsEntry(coachWithThreeSessions, 3L);
+
+        assertThat(countByCoaches.keySet())
+                .containsExactly(coachWithThreeSessions, coachWithTwoSessions, coachWithOneSession);
+    }
+
     private List<TrainingSession> getTrainingSessionsList(Map<TimeOfDay, List<TrainingSession>> trainingSessionsList) {
         return trainingSessionsList.values().stream()
                 .flatMap(List::stream)
