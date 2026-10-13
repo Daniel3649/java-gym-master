@@ -1,12 +1,14 @@
 package ru.yandex.practicum.gym;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TimetableTest {
-
     @Test
     void testGetTrainingSessionsForDaySingleSession() {
         Timetable timetable = new Timetable();
@@ -20,6 +22,16 @@ public class TimetableTest {
 
         //Проверить, что за понедельник вернулось одно занятие
         //Проверить, что за вторник не вернулось занятий
+        Map<TimeOfDay, List<TrainingSession>> trainingsByMonday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.MONDAY);
+        Map<TimeOfDay, List<TrainingSession>> trainingsByTuesday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.TUESDAY);
+
+        assertThat(getTrainingSessionsList(trainingsByMonday))
+                .containsExactly(singleTrainingSession);
+
+        assertThat(trainingsByTuesday)
+                .isEmpty();
     }
 
     @Test
@@ -49,21 +61,145 @@ public class TimetableTest {
         // Проверить, что за понедельник вернулось одно занятие
         // Проверить, что за четверг вернулось два занятия в правильном порядке: сначала в 13:00, потом в 20:00
         // Проверить, что за вторник не вернулось занятий
+        Map<TimeOfDay, List<TrainingSession>> trainingsByMonday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.MONDAY);
+        Map<TimeOfDay, List<TrainingSession>> trainingsByTuesday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.TUESDAY);
+        Map<TimeOfDay, List<TrainingSession>> trainingsByThursday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.THURSDAY);
+
+        assertThat(getTrainingSessionsList(trainingsByMonday))
+                .containsExactly(mondayChildTrainingSession);
+
+        assertThat(trainingsByTuesday)
+                .isEmpty();
+
+        assertThat(getTrainingSessionsList(trainingsByThursday))
+                .containsExactly(
+                        thursdayChildTrainingSession,
+                        thursdayAdultTrainingSession
+                );
     }
 
     @Test
     void testGetTrainingSessionsForDayAndTime() {
         Timetable timetable = new Timetable();
 
+        TimeOfDay timeOfDay = new TimeOfDay(13, 0);
         Group group = new Group("Акробатика для детей", Age.CHILD, 60);
         Coach coach = new Coach("Васильев", "Николай", "Сергеевич");
         TrainingSession singleTrainingSession = new TrainingSession(group, coach,
-                DayOfWeek.MONDAY, new TimeOfDay(13, 0));
+                DayOfWeek.MONDAY, timeOfDay);
 
         timetable.addNewTrainingSession(singleTrainingSession);
 
         //Проверить, что за понедельник в 13:00 вернулось одно занятие
         //Проверить, что за понедельник в 14:00 не вернулось занятий
+        List<TrainingSession> trainingsByMondayAnd1PM = timetable.getTrainingSessionsForDayAndTime(
+                DayOfWeek.MONDAY,
+                timeOfDay
+        );
+        List<TrainingSession> trainingsByMondayAnd2PM = timetable.getTrainingSessionsForDayAndTime(
+                DayOfWeek.MONDAY,
+                new TimeOfDay(14, 0)
+        );
+
+        assertThat(trainingsByMondayAnd1PM)
+                .containsExactly(singleTrainingSession);
+
+        assertThat(trainingsByMondayAnd2PM)
+                .isEmpty();
     }
 
+    @ParameterizedTest
+    @EnumSource(DayOfWeek.class)
+    void testEmptyTimetable(DayOfWeek dayOfWeek) {
+        Timetable timetable = new Timetable();
+
+        Map<TimeOfDay, List<TrainingSession>> trainingSessionsByDayOfWeek =
+                timetable.getTrainingSessionsForDay(dayOfWeek);
+
+        assertThat(trainingSessionsByDayOfWeek)
+                .isEmpty();
+    }
+
+    @Test
+    void testMultipleSessionsAtTheSameTime() {
+        Timetable timetable = new Timetable();
+
+        TimeOfDay timeOfDay = new TimeOfDay(13, 0);
+        Group groupChild = new Group("Акробатика для детей", Age.CHILD, 60);
+        Group groupAdult = new Group("Акробатика для взрослых", Age.ADULT, 90);
+        Coach coachAdult = new Coach("Васильев", "Николай", "Сергеевич");
+        Coach coachChild = new Coach("Смолов", "Иван", "Федорович");
+        TrainingSession trainingSessionChild = new TrainingSession(
+                groupChild,
+                coachChild,
+                DayOfWeek.MONDAY,
+                timeOfDay
+        );
+        TrainingSession trainingSessionAdult = new TrainingSession(
+                groupAdult,
+                coachAdult,
+                DayOfWeek.MONDAY,
+                timeOfDay
+        );
+
+        timetable.addNewTrainingSession(trainingSessionChild);
+        timetable.addNewTrainingSession(trainingSessionAdult);
+
+        List<TrainingSession> trainingSessionsByMondayAnd1PM =
+                timetable.getTrainingSessionsForDayAndTime(DayOfWeek.MONDAY, timeOfDay);
+
+        assertThat(trainingSessionsByMondayAnd1PM)
+                .containsExactly(
+                        trainingSessionChild,
+                        trainingSessionAdult
+                );
+    }
+
+    @Test
+    void testSessionsSortedByMinutes() {
+        Timetable timetable = new Timetable();
+
+        TimeOfDay time1PMAnd10Minutes = new TimeOfDay(13, 10);
+        TimeOfDay time1PMAnd5Minutes = new TimeOfDay(13, 5);
+
+        Group groupChild = new Group("Акробатика для детей", Age.CHILD, 60);
+        Group groupAdult = new Group("Акробатика для взрослых", Age.ADULT, 90);
+
+        Coach coachAdult = new Coach("Васильев", "Николай", "Сергеевич");
+        Coach coachChild = new Coach("Смолов", "Иван", "Федорович");
+
+        TrainingSession trainingSessionAt1PMAnd10Minutes = new TrainingSession(
+                groupChild,
+                coachChild,
+                DayOfWeek.MONDAY,
+                time1PMAnd10Minutes
+        );
+        TrainingSession trainingSessionAdultAt1PMAnd5Minutes = new TrainingSession(
+                groupAdult,
+                coachAdult,
+                DayOfWeek.MONDAY,
+                time1PMAnd5Minutes
+        );
+
+        timetable.addNewTrainingSession(trainingSessionAt1PMAnd10Minutes);
+        timetable.addNewTrainingSession(trainingSessionAdultAt1PMAnd5Minutes);
+
+        Map<TimeOfDay, List<TrainingSession>> trainingSessionsByMonday =
+                timetable.getTrainingSessionsForDay(DayOfWeek.MONDAY);
+
+        assertThat(getTrainingSessionsList(trainingSessionsByMonday))
+                .containsExactly(
+                        trainingSessionAdultAt1PMAnd5Minutes,
+                        trainingSessionAt1PMAnd10Minutes
+                );
+    }
+
+    private List<TrainingSession> getTrainingSessionsList(Map<TimeOfDay, List<TrainingSession>> trainingSessionsList) {
+        return trainingSessionsList.values().stream()
+                .flatMap(List::stream)
+                .toList();
+    }
 }
