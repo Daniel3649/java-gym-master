@@ -3,10 +3,13 @@ package ru.yandex.practicum.gym;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TimetableTest {
     @Test
@@ -27,11 +30,9 @@ public class TimetableTest {
         Map<TimeOfDay, List<TrainingSession>> trainingsByTuesday =
                 timetable.getTrainingSessionsForDay(DayOfWeek.TUESDAY);
 
-        assertThat(getTrainingSessionsList(trainingsByMonday))
-                .containsExactly(singleTrainingSession);
+        assertIterableEquals(List.of(singleTrainingSession), getTrainingSessionsList(trainingsByMonday));
 
-        assertThat(trainingsByTuesday)
-                .isEmpty();
+        assertTrue(trainingsByTuesday.isEmpty());
     }
 
     @Test
@@ -68,17 +69,14 @@ public class TimetableTest {
         Map<TimeOfDay, List<TrainingSession>> trainingsByThursday =
                 timetable.getTrainingSessionsForDay(DayOfWeek.THURSDAY);
 
-        assertThat(getTrainingSessionsList(trainingsByMonday))
-                .containsExactly(mondayChildTrainingSession);
+        assertIterableEquals(List.of(mondayChildTrainingSession), getTrainingSessionsList(trainingsByMonday));
 
-        assertThat(trainingsByTuesday)
-                .isEmpty();
+        assertTrue(trainingsByTuesday.isEmpty());
 
-        assertThat(getTrainingSessionsList(trainingsByThursday))
-                .containsExactly(
-                        thursdayChildTrainingSession,
-                        thursdayAdultTrainingSession
-                );
+        assertIterableEquals(
+                List.of(thursdayChildTrainingSession, thursdayAdultTrainingSession),
+                getTrainingSessionsList(trainingsByThursday)
+        );
     }
 
     @Test
@@ -104,11 +102,9 @@ public class TimetableTest {
                 new TimeOfDay(14, 0)
         );
 
-        assertThat(trainingsByMondayAnd1PM)
-                .containsExactly(singleTrainingSession);
+        assertIterableEquals(List.of(singleTrainingSession), trainingsByMondayAnd1PM);
 
-        assertThat(trainingsByMondayAnd2PM)
-                .isEmpty();
+        assertTrue(trainingsByMondayAnd2PM.isEmpty());
     }
 
     @ParameterizedTest
@@ -119,8 +115,7 @@ public class TimetableTest {
         Map<TimeOfDay, List<TrainingSession>> trainingSessionsByDayOfWeek =
                 timetable.getTrainingSessionsForDay(dayOfWeek);
 
-        assertThat(trainingSessionsByDayOfWeek)
-                .isEmpty();
+        assertTrue(trainingSessionsByDayOfWeek.isEmpty());
     }
 
     @Test
@@ -151,11 +146,10 @@ public class TimetableTest {
         List<TrainingSession> trainingSessionsByMondayAnd1PM =
                 timetable.getTrainingSessionsForDayAndTime(DayOfWeek.MONDAY, timeOfDay);
 
-        assertThat(trainingSessionsByMondayAnd1PM)
-                .containsExactly(
-                        trainingSessionChild,
-                        trainingSessionAdult
-                );
+        assertIterableEquals(
+                List.of(trainingSessionChild, trainingSessionAdult),
+                trainingSessionsByMondayAnd1PM
+        );
     }
 
     @Test
@@ -190,11 +184,10 @@ public class TimetableTest {
         Map<TimeOfDay, List<TrainingSession>> trainingSessionsByMonday =
                 timetable.getTrainingSessionsForDay(DayOfWeek.MONDAY);
 
-        assertThat(getTrainingSessionsList(trainingSessionsByMonday))
-                .containsExactly(
-                        trainingSessionAdultAt1PMAnd5Minutes,
-                        trainingSessionAt1PMAnd10Minutes
-                );
+        assertIterableEquals(
+                List.of(trainingSessionAdultAt1PMAnd5Minutes, trainingSessionAt1PMAnd10Minutes),
+                getTrainingSessionsList(trainingSessionsByMonday)
+        );
     }
 
     @Test
@@ -203,8 +196,7 @@ public class TimetableTest {
 
         Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
 
-        assertThat(countByCoaches)
-                .isEmpty();
+        assertTrue(countByCoaches.isEmpty());
     }
 
     @Test
@@ -234,9 +226,7 @@ public class TimetableTest {
 
         Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
 
-        assertThat(countByCoaches)
-                .hasSize(1)
-                .containsEntry(coachAdult, 2L);
+        assertEquals(Map.of(coachAdult, 2L), countByCoaches);
     }
 
     @Test
@@ -263,14 +253,16 @@ public class TimetableTest {
 
         Map<Coach, Long> countByCoaches = timetable.getCountByCoaches();
 
-        assertThat(countByCoaches)
-                .hasSize(3)
-                .containsEntry(coachWithOneSession, 1L)
-                .containsEntry(coachWithTwoSessions, 2L)
-                .containsEntry(coachWithThreeSessions, 3L);
+        assertEquals(Map.of(
+                coachWithOneSession, 1L,
+                coachWithTwoSessions, 2L,
+                coachWithThreeSessions, 3L
+        ), countByCoaches);
 
-        assertThat(countByCoaches.keySet())
-                .containsExactly(coachWithThreeSessions, coachWithTwoSessions, coachWithOneSession);
+        assertIterableEquals(
+                List.of(coachWithThreeSessions, coachWithTwoSessions, coachWithOneSession),
+                countByCoaches.keySet()
+        );
     }
 
     private List<TrainingSession> getTrainingSessionsList(Map<TimeOfDay, List<TrainingSession>> trainingSessionsList) {

@@ -34,15 +34,5 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module-library" scope="TEST">
-      <library name="AssertJ3.27.6">
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/org/assertj/assertj-core/3.27.6/assertj-core-3.27.6.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/net/bytebuddy/byte-buddy/1.17.7/byte-buddy-1.17.7.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
   </component>
 </module>
